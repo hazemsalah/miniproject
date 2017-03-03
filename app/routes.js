@@ -331,20 +331,28 @@ router.post('/upload',upload.single('images'),  function(req, res) {
    res.render('addProject');
 });
     router.post('/addProject',upload.single('fileInput'),function(req,res){
-  
+        console.log('hell');
+        console.log(req.body.link);
+        
+        console.log(req.file);
+        
+     
        console.log("test");
-    console.log(req.body.URL);
     console.log(req.file);
     console.log(img);
         var project = new Project();
     var title = req.body.title;
-         if (req.body.URL===undefined && req.file=== undefined ){
-        return res.render('addProject');
+        
+      if (req.body.link===undefined && req.file=== undefined ){
+             console.log('====l===');
+          return res.render('addProject');
+           
     }
     if(req.body.link===undefined){
         var work='http://localhost:8080/uploads/'+req.file.filename;
         firstprojectW=work;
         project.work=work;
+        console.log('ok');
     }
     else {if(req.file=== undefined){
         var URL= req.body.link;
