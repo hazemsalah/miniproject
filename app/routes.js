@@ -131,7 +131,7 @@ router.post('/project',upload.single('fileInput'),function(req, res){
         return res.redirect('/portfolio')
     }
     if(req.body.URL===undefined){
-        var work='http://localhost:8080/uploads/'+req.file.filename;
+        var work='uploads/'+req.file.filename;
         project.work=work;
         projectW=work;
     }
@@ -325,9 +325,9 @@ router.post('/upload',upload.single('images'),  function(req, res) {
 
     portfolioName=req.body.name;
     if(req.file != undefined)
-    imgpath = 'http://localhost:8080/uploads/'+req.file.filename;
+    imgpath = 'uploads/'+req.file.filename;
     else 
-       imgpath = 'http://localhost:8080/hantsuki-avatar.jpg';
+       imgpath = 'hantsuki-avatar.jpg';
    res.render('addProject');
 });
     router.post('/addProject',upload.single('fileInput'),function(req,res){
@@ -349,7 +349,7 @@ router.post('/upload',upload.single('images'),  function(req, res) {
            
     }
     if(req.body.link===undefined){
-        var work='http://localhost:8080/uploads/'+req.file.filename;
+        var work='uploads/'+req.file.filename;
         firstprojectW=work;
         project.work=work;
         console.log('ok');
