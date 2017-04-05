@@ -17,7 +17,7 @@ var ModeratorSchema = new Schema({
         type: String,
         required: true
     },
-    location: [{
+    business_location: [{
         city: {
             type: String,
             required: true
@@ -44,18 +44,18 @@ var ModeratorSchema = new Schema({
 
 var Moderator = module.exports = mongoose.model("Moderator", ModeratorSchema);
 
-module.exports.getModeratorByBusinessNumber = function(business_number, callback) {
+module.exports.getModeratorByBusinessNumber = function (business_number, callback) {
     var query = {
         business_number: business_number
     };
     Moderator.findOne(query, callback);
 }
 
-module.exports.getModeratorById = function(id, callback) {
+module.exports.getModeratorById = function (id, callback) {
     Moderator.findById(id, callback);
 }
 
-module.exports.confirmModerator = function(newModerator, callback) {
+module.exports.confirmModerator = function (newModerator, callback) {
     bcrypt.genSalt(10, (err, salt) => {
         bcrypt.hash(newModerator.business_number.toString(), salt, (err, hash) => {
             if (err) throw err;

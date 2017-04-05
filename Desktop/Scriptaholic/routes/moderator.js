@@ -2,6 +2,7 @@ var express = require('express');
 var Business = require('../models/Business')
 var Activity = require('../models/Activity')
 var Event = require('../models/Event')
+var Admin = require('../models/Administrator')
 var router = express.Router();
 var passport = require('passport');
 var jwt = require('jsonwebtoken');
@@ -15,18 +16,25 @@ var upload = multer({
 var path = require('path');
 var async = require('async');
 
-
 //Request an account
 router.post('/register', (req, res) => {
-    let newModerator = new Moderator({
-        email: req.body.email,
-        bank_account: req.body.bank_account,
-        business_name: req.body.business_name,
-        business_location: req.body.business_location,
-        business_number: req.body.business_number,
-        status: 'unregistered'
-    })
-    newModerator.save((err, moderator) => {
+    // var moderator = new Moderator();
+    let moderator = new Moderator({})
+    moderator.email = req.body.email;
+    moderator.bank_account = req.body.bank_account;
+    moderator.business_name = req.body.business_name;
+    moderator.business_number = req.body.business_number;
+    moderator.business_type = req.body.business_type;
+    moderator.status = 'unregistered';
+    moderator.business_location = {
+        city: req.body.city,
+        area: req.body.area,
+        address: req.body.address
+    };
+    console.log(moderator);
+
+    moderator.save(function (err, moderator) {
+        console.log(moderator);
         if (err) {
             res.json({
                 success: false,
@@ -38,7 +46,8 @@ router.post('/register', (req, res) => {
                 msg: 'Moderator registered'
             });
         }
-    })
+    });
+
 })
 
 //Authenticate
@@ -143,39 +152,59 @@ router.post('/addlocation',function(req,res){
     else {*/
 router.post('/addLocation', passport.authenticate('jwt', {
     session: false
-}), function(req, res) {
+}), function (req, res) {
 
     username = req.user.username;
-    location: req.body.location;
+    var city = req.body.city;
+    var area = req.body.area;
+    var address = req.body.address;
+var check;
+  check=Business.findOne({
+                location:{$elemMatch:{city:city,area:area,address:address}}}, function (err, result) {
+                if (err) {
+                    
+                }
+            }); 
+  
+    if(check){
+        res.json("already exists");
+       return;
+    }
+    else {if (req.body.address == 0) {
 
-
-    if (req.body.location.length == 0) {} else {
-
+    } else {
+        console.log(username);
         Business.update({
-            username: username
-        }, {
-            $addToSet: {
-                location: req.body.location
-            }
-        }, function(err, result) {});
+                username: username
+            }, {
+                $addToSet: {
+                    location: {
+                        city: req.body.city,
+                        area: req.body.area,
+                        address: req.body.address
+                    }
+                }
+            },
+            function (err, result) {});
 
-        res.json(req.body);
+
+        res.json(req.body.city);
         //res.redirect('/moderator/locations');
     }
-    res.json(req.body.location);
+         }
 
 });
 
 router.post('/deleteLocation', passport.authenticate('jwt', {
     session: false
-}), function(req, res) {
+}), function (req, res) {
     username = req.user.username;
     location: req.body.location;
     async.series([
-        function(callback) {
+        function (callback) {
             Business.findOne({
                 username: username
-            }, function(err, result) {
+            }, function (err, result) {
                 if (err) {
                     callback(err);
                 }
@@ -185,7 +214,7 @@ router.post('/deleteLocation', passport.authenticate('jwt', {
             });
 
         },
-        function(callback) {
+        function (callback) {
 
             if (locations.length > 1)
                 Business.update({
@@ -194,9 +223,9 @@ router.post('/deleteLocation', passport.authenticate('jwt', {
                     $pull: {
                         location: req.body.location
                     }
-                }, function(err, result) {});
+                }, function (err, result) {});
         }
-    ], function(err) {
+    ], function (err) {
         if (err) res.send(err.message);
         // res.render('index',{projects,img,currentuser});
     });
@@ -206,24 +235,30 @@ router.post('/deleteLocation', passport.authenticate('jwt', {
 });
 router.post('/editLocation', passport.authenticate('jwt', {
     session: false
-}), function(req, res) {
+}), function (req, res) {
     username = req.user.username;
-    location: req.body.location;
-    Business.update({
+    location= req.body.location;
+  
+
+   Business.update({
         username: username,
-        location: req.body.location
+        location:{$elemMatch:location}
     }, {
         $set: {
-            "location.$": req.body.newlocation
+           "location.$":{
+               city:req.body.new_city,
+               area:req.body.new_area,
+               address:req.body.new_address
+           }
+               
+            
         }
-    }, function(err, result) {
-        console.log(result);
-    });
-});
+    }, function (err, result) {console.log(result)});
+res.json(req.body.location);});
 
 router.post('/setPayment', passport.authenticate('jwt', {
     session: false
-}), function(req, res) {
+}), function (req, res) {
     username = req.user.username;
     payment = req.body.payment;
     console.log(payment);
@@ -236,7 +271,7 @@ router.post('/setPayment', passport.authenticate('jwt', {
                 $each: payment
             }
         }
-    }, function(err, result) {
+    }, function (err, result) {
 
     });
 
@@ -244,13 +279,11 @@ router.post('/setPayment', passport.authenticate('jwt', {
 });
 //--------------View All businesses and activities (NOT userstories)---------
 
-router.get('/businesses', passport.authenticate('jwt', {
-    session: false
-}), function(req, res) {
-    Business.find({}, function(err, businesses) {
+router.get('/businesses', function (req, res) {
+    Business.find({}, function (err, businesses) {
         var businessMap = {};
 
-        businesses.forEach(function(business) {
+        businesses.forEach(function (business) {
             business.populate("theBusiness");
             businessMap[business._id] = business;
         });
@@ -259,14 +292,27 @@ router.get('/businesses', passport.authenticate('jwt', {
     });
 });
 
+router.get('/admins', function (req, res) {
+    Admin.find({}, function (err, admins) {
+        var adminMap = {};
+
+        admins.forEach(function (admin) {
+            admin.populate("theAdmin");
+            adminMap[admin._id] = admin;
+        });
+
+        res.send(adminMap);
+    });
+});
+
 
 router.get('/activities', passport.authenticate('jwt', {
     session: false
-}), function(req, res) {
-    Activity.find({}, function(err, activities) {
+}), function (req, res) {
+    Activity.find({}, function (err, activities) {
         var activityMap = {};
 
-        activities.forEach(function(activity) {
+        activities.forEach(function (activity) {
             activity.populate("theActivity");
             activityMap[activity._id] = activity;
         });
@@ -280,10 +326,10 @@ router.get('/activities', passport.authenticate('jwt', {
 
 router.post('/modBusiness', passport.authenticate('jwt', {
     session: false
-}), function(req, res) {
+}), function (req, res) {
     Business.findOne({
         username: req.user.username
-    }, function(err, business) {
+    }, function (err, business) {
         console.log(business);
         return res.send(business);
     });
@@ -291,10 +337,10 @@ router.post('/modBusiness', passport.authenticate('jwt', {
 
 router.post('/modActivities', passport.authenticate('jwt', {
     session: false
-}), function(req, res) {
+}), function (req, res) {
     Activity.find({
         "modusername": req.user.username
-    }, function(err, activity) {
+    }, function (err, activity) {
         console.log(activity);
         return res.send(activity);
     });
@@ -306,17 +352,17 @@ router.post('/modActivities', passport.authenticate('jwt', {
 
 router.post('/editBusiness', passport.authenticate('jwt', {
     session: false
-}), function(req, res) {
+}), function (req, res) {
     Business.findOne({
         username: req.user.username
-    }, function(err, business) {
+    }, function (err, business) {
         business.location = req.body.newLocation
         business.description = req.body.newDescription;
         business.business_name = req.body.newName;
         business.pictures = req.body.newPictures;
         business.website = req.body.newWebsite;
         //    console.log(req.body.newDescription);
-        business.save(function(err) {
+        business.save(function (err) {
             if (err) {
                 console.error('Error saving the new business information.');
                 return res.send('Error saving the new business information.');
@@ -329,7 +375,7 @@ router.post('/editBusiness', passport.authenticate('jwt', {
 
 router.post('/addActivity', passport.authenticate('jwt', {
     session: false
-}), function(req, res) {
+}), function (req, res) {
     var activity = new Activity();
     activity.modusername = req.user.username;
     activity.name = req.body.ActivityName;
@@ -338,7 +384,7 @@ router.post('/addActivity', passport.authenticate('jwt', {
     activity.payment = req.body.ActivityPayment;
     activity.discount.originalPrice = req.body.ActivityPayment;
     console.log("Activity created.");
-    activity.save(function(err, activity) {
+    activity.save(function (err, activity) {
         if (err) {
             console.error('Error creating the activity.');
             return res.send('Error creating the activity.');
@@ -351,18 +397,18 @@ router.post('/addActivity', passport.authenticate('jwt', {
 
 router.post('/editActivity', passport.authenticate('jwt', {
     session: false
-}), function(req, res) {
+}), function (req, res) {
     Activity.findOne({
         "modusername": req.user.username,
         "name": req.body.ActivityName
-    }, function(err, activity) {
+    }, function (err, activity) {
         activity.name = req.body.newActivityName;
         activity.capacity = req.body.newCapacity;
         activity.images = req.body.newActivityImages;
         activity.payment = req.body.newActivityPayment;
         activity.discount.actualDiscount = 0;
         activity.discount.originalPrice = req.body.newActivityPayment;
-        activity.save(function(err) {
+        activity.save(function (err) {
             if (err) {
                 console.error('Error saving the new activity information');
                 return res.send('Error saving the new activity information');
@@ -376,15 +422,15 @@ router.post('/editActivity', passport.authenticate('jwt', {
 });
 router.post('/discount', passport.authenticate('jwt', {
     session: false
-}), function(req, res) {
+}), function (req, res) {
     Activity.findOne({
         modusername: req.user.username,
         name: req.body.ActivityName
-    }, function(err, activity) {
+    }, function (err, activity) {
         theNewDiscount = req.body.newDiscount;
         activity.discount.actualDiscount = theNewDiscount;
         activity.payment = activity.discount.originalPrice - (activity.discount.originalPrice * (theNewDiscount / 100));
-        activity.save(function(err) {
+        activity.save(function (err) {
             if (err) {
                 console.error('Error adding the discount.');
                 return res.send('Error adding the discount.');
@@ -395,7 +441,7 @@ router.post('/discount', passport.authenticate('jwt', {
 
 });
 
-router.get('/picturetest', function(req, res) {
+router.get('/picturetest', function (req, res) {
     res.render('picturetest');
 
 })
@@ -403,7 +449,7 @@ router.get('/picturetest', function(req, res) {
 
 router.post('/addPicture', passport.authenticate('jwt', {
     session: false
-}), upload.any(), function(req, res) {
+}), upload.any(), function (req, res) {
 
     for (var i = 0; i < req.files.length; i++) {
         var str = req.files[i].path;
@@ -414,7 +460,7 @@ router.post('/addPicture', passport.authenticate('jwt', {
             $addToSet: {
                 pictures: str
             }
-        }, function(err, result) {});
+        }, function (err, result) {});
 
     }
 
@@ -461,7 +507,7 @@ router.get('/getAllEvents', passport.authenticate('jwt', {
 }), (req, res) => {
 
 
-    Event.find(function(err, events) {
+    Event.find(function (err, events) {
 
         if (err) {
             res.send(err.message);
@@ -475,9 +521,8 @@ router.get('/getAllEvents', passport.authenticate('jwt', {
 });
 
 
-module.exports = router;
 
-router.get('/picturetest', function(req, res) {
+router.get('/picturetest', function (req, res) {
     res.render('picturetest');
 
 })
@@ -485,7 +530,7 @@ router.get('/picturetest', function(req, res) {
 
 router.post('/addPicture', passport.authenticate('jwt', {
     session: false
-}), upload.any(), function(req, res) {
+}), upload.any(), function (req, res) {
 
     for (var i = 0; i < req.files.length; i++) {
         var str = req.files[i].path;
@@ -496,27 +541,27 @@ router.post('/addPicture', passport.authenticate('jwt', {
             $addToSet: {
                 pictures: str
             }
-        }, function(err, result) {});
+        }, function (err, result) {});
 
     }
 
 
 });
 
-router.post('/viewReservations', function(req, res) {
+router.post('/viewReservations', function (req, res) {
     Booking.find({
         'mod_username': req.user.username
-    }, function(err, bookings) {
+    }, function (err, bookings) {
         console.log(req.body)
         res.send(bookings);
     });
 });
 
-router.post('/viewRating', function(req, res) {
+router.post('/viewRating', function (req, res) {
 
     Business.findOne({
         'username': req.user.username
-    }, function(err, business) {
+    }, function (err, business) {
         totalNumberRating = business.rating.length;
         var Sum = 0;
         for (var i = 0; i < totalNumberRating; i++) {
@@ -530,15 +575,23 @@ router.post('/viewRating', function(req, res) {
 
 });
 
-router.post('/viewReviews', function(req, res) {
+router.post('/viewReviews', function (req, res) {
 
     Business.findOne({
         'username': req.user.username
-    }, function(err, business) {
+    }, function (err, business) {
 
         res.send(business.reviews);
     });
 });
+
+
+router.get('/moderatorsetsavdates', function (req, res) {
+
+
+
+
+})
 
 
 

@@ -1,7 +1,6 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
-
 var activitySchema = mongoose.Schema({
     business_id: {
         type: Schema.Types.ObjectId,
@@ -20,9 +19,8 @@ var activitySchema = mongoose.Schema({
             default: 0
         },
     }],
-    startDate: Date,            
+    startDate: Date,           
     endDate: Date, 
-
 
     discount: {
         actualDiscount: Number,
@@ -31,8 +29,6 @@ var activitySchema = mongoose.Schema({
     images: [{
         type: String
     }],
-
-
 
     price: { //was payment
         type: Number,
@@ -44,3 +40,6 @@ var activitySchema = mongoose.Schema({
 
 var Activity = mongoose.model("activity", activitySchema);
 module.exports = Activity;
+
+
+

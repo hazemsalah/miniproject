@@ -106,12 +106,17 @@ router.post('/update/status', passport.authenticate('jwt', {
                     password: moderator.business_number,
                     email: moderator.email,
                     bank_account: moderator.bank_account,
-                    business_name: moderator.business_name,
+                    name: moderator.business_name,
                     location: moderator.business_location,
                     business_number: moderator.business_number,
+                    type: moderator.business_type,
+
                 })
+                console.log(newBusiness)
+                
                 Business.addBusiness(newBusiness, (err) => {
                     if (err) {
+                        console.log(newBusiness);
                         res.json({
                             success: false
                         })

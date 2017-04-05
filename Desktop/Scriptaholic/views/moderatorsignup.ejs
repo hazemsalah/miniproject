@@ -3,22 +3,20 @@
 
 <body>
 
-<form method="POST" action="/moderator/register"  enctype="multipart/form-data" >
+<form method="POST" action="/moderator/register" >
   email: <input type="text" name="email"><br>
-  location: <input type="text" name="business_location"><br>
+  city: <input type="text" name="city"><br>
+  area: <input type="text" name="area"><br>
+  address: <input type="text" name="address"><br>
   business_number: <input type="text" name="business_number"><br>
   bank_account: <input type="text" name="bank_account"><br>
   business_name: <input type="text" name="business_name"><br>
-  PICTURE:<br>
-  <input type="file" name="file[]"/>
+  business_type: <input type="text" name="business_type"><br>
+
   <br><br>
 
  <input type="submit" value="Submit">
-   <script>            
 
-$('input[type="file"]').on('change', function() { $(this).append('<input type="file" name="file[]"/>'});
-
-    </script>
 </form>
 
 

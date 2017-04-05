@@ -16,19 +16,13 @@ module.exports = function(passport) {
             if (admin) {
                 return done(null, admin);
             } else {
-                return done(null, false);
-            }
-        })
-    }))
-    passport.use(new JwtStrategy(opts, (jwt_payload, done) => {
-        Business.getBusinessById(jwt_payload._doc._id, (err, business) => {
-            if (err) {
-                return done(err, false);
-            }
-            if (business) {
-                return done(null, business);
-            } else {
-                return done(null, false);
+                Business.getBusinessById(jwt_payload._doc._id,(error, business) => {
+                    if(!err &&business){
+                        return done(null, business);
+                    }else{
+                        return done(null, false);
+                    }
+                })
             }
         })
     }))
